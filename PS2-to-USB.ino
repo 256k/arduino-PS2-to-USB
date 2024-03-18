@@ -22,7 +22,45 @@ void DEBUG_HEXPRINT(uint8_t number) {
    */
   Serial.print("0x");
   if (number <= 15) Serial.print("0");
-  Serial.println(number, HEX);
+  Serial.println(number);
+  
+}
+// fayek: this is my custom function to map key input into alternative key outputs.
+// this is currently only working for the normal scancode
+// goal would be to divide the file into the reference objects and the core logic as well as a config file to quickly set the key swaps
+// also find a way to generalize swap between scancodes (make a special scancode output a normal scancode and vice versa. (not critical)) 
+uint8_t mapKeys(uint8_t key) {
+  switch (key) {
+    case 102: // backspace
+      return 41; // space
+      break;
+
+    case 41: // space
+      return 102; // backspace
+      break;
+      
+    default:
+      return key;
+  }
+}
+
+uint8_t mapKeysSpecial(uint8_t key) {
+  /*
+  217, // 114 (0x72) arrow down
+  218, // 117 (0x75) arrow up
+  */
+Serial.println( key);
+  switch (key) {
+    case 114: // down arrow
+      return 117; // up arrow
+      break;
+    case 117: // up arrow
+      return 114; // down arrow
+      break;
+      
+    default:
+      return key;
+  }
 }
 
 void simulateKey(void) {
@@ -875,16 +913,18 @@ void simulateKey(void) {
 
   switch(scanCodeType) {
     case 0:      // make
-      Keyboard.press(scancodeToKey[scanCode]);
+    Serial.println(mapKeys(scanCode));
+      Keyboard.press(scancodeToKey[mapKeys(scanCode)]);
       break;
-    case 1:      // break
-      Keyboard.release(scancodeToKey[scanCode]);
+    case 1:  
+        // break
+      Keyboard.release(scancodeToKey[mapKeys(scanCode)]);
       break;
     case 2:      // specialmake
-      Keyboard.press(scancodeToKeySpecial[scanCode]);
+      Keyboard.press(scancodeToKeySpecial[mapKeysSpecial(scanCode)]);
       break;
     case 3:      // specialbreak
-      Keyboard.release(scancodeToKeySpecial[scanCode]);
+      Keyboard.release(scancodeToKeySpecial[mapKeysSpecial(scanCode)]);
       break;
     case 4:      // extraspecialmake
       Keyboard.press(scancodeToKeyExtraSpecial[scanCode]);
@@ -1088,6 +1128,9 @@ void keyboardRead(void) {
     bitCounter = 0;
   }
 
+  // Serial.print("datain: ");
+  // Serial.println(dataIn);
+
   bitWrite(dataIn, bitCounter, digitalRead(dataPin));
   bitCounter ++;
 
@@ -1128,6 +1171,7 @@ void keyboardRead(void) {
 
 void setup() {
   Serial.begin(9600);
+  Serial.println("TEESSSTTT");
   pinMode(dataPin, INPUT_PULLUP);
   pinMode(irqPin, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(irqPin), keyboardRead, FALLING);
